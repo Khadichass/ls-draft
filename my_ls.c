@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/stat.h>
 
 typedef struct Node
 {
     char* file;
     struct Node* next;
+    time_t t_last_option;
 }ls_listnode;
 
 int my_strlen(char* str_arr)
@@ -35,6 +37,19 @@ int my_strcmp(char* str1, char*str2)
     }
 
     return 0;
+}
+
+int my_length(ls_listnode* head)
+{
+  ls_listnode* header = head;
+  int count = 0;
+  while (header != NULL)
+  {
+    count++;
+    header = header->next;
+  }
+
+  return count;
 }
 
 void newline_node(ls_listnode** head, char* file) {
