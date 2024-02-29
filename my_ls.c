@@ -24,6 +24,19 @@ int my_strlen(char* str_arr)
     return length;
 }
 
+int my_length(ls_listnode* head)
+{
+  ls_listnode* header = head;
+  int count = 0;
+  while (header != NULL)
+  {
+    count++;
+    header = header->next;
+  }
+
+  return count;
+}
+
 int my_strcmp(char* str1, char*str2)
 {
     int i = 0;
@@ -39,19 +52,6 @@ int my_strcmp(char* str1, char*str2)
     return 0;
 }
 
-int my_length(ls_listnode* head)
-{
-  ls_listnode* header = head;
-  int count = 0;
-  while (header != NULL)
-  {
-    count++;
-    header = header->next;
-  }
-
-  return count;
-}
-
 void newline_node(ls_listnode** head, char* file) {
 
     struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
@@ -61,10 +61,13 @@ void newline_node(ls_listnode** head, char* file) {
             strcpy(newNode->file, file);
             newNode->next = NULL;
 
-            if (*head == NULL) {
+            if (*head == NULL) 
+            {
                 
                 *head = newNode;
-            } else {
+            } 
+            else 
+            {
                 struct Node* temp = *head;
                 while (temp->next != NULL) {
                     temp = temp->next;
