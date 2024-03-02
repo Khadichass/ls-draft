@@ -19,6 +19,20 @@ int my_strlen(char* str_arr) {
     return length;
 }
 
+int my_length(ls_listnode* head) 
+{
+    ls_listnode* header = head;
+    int count = 0;
+
+    while (header != NULL)
+    {
+       count++;
+       header = header->next;
+    }
+    
+    return count;
+}
+
 int my_strcmp(char* str1, char* str2) {
     int i = 0;
     while (str1[i] != '\0') {
@@ -42,7 +56,7 @@ void my_linked_list_swap(ls_listnode* str1, ls_listnode* str2) {
 
 void sort_linked_list(ls_listnode *head) {
     int swapped = 1;
-    while (swapped) {
+    while (my_length(head)) {
         swapped = 0;
         ls_listnode *current = head;
         ls_listnode *nextNode = head->next;
