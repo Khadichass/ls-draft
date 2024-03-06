@@ -88,7 +88,6 @@ void sort_linked_list(struct node *head)
 {
     int len_of_list = counter_for_linked_list(head);
     struct node *current = head;
-    ;
     struct node *temp = head;
     for (int i = 0; i < len_of_list - 1; i++)
     {
@@ -119,8 +118,8 @@ void sort_by_time_last_access(struct node *head)
     while (temp != NULL)
     {
         stat(temp->name, &stat_file);
-        temp->lastAccessTime = stat_file.st_mtimespec.tv_sec;
-        temp->lastAccessTime_in_n_seconds = stat_file.st_mtimespec.tv_nsec;
+        temp->lastAccessTime = stat_file.st_mtime;
+        temp->lastAccessTime_in_n_seconds = stat_file.st_mtime;
         temp = temp->next;
     }
     sort_linked_list(head);
