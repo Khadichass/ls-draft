@@ -139,9 +139,7 @@ void print_linked_list (ls_listnode* head)
         newline_node(&head, data->d_name);
         
     }
-
-    sort_linked_list(head);
-    // my_option(head);
+    
     ls_listnode *current = head;
 
     while (current != NULL)
