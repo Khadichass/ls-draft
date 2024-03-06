@@ -26,6 +26,14 @@ int my_strcmp(char *str1, char *str2)
     return 0;
 }
 
+// int my_length(ls_listnode *head)
+// {
+//     int count = 0;
+//     while (head != NULL)
+//     {
+//     }
+// }
+
 void my_linked_list_swap(ls_listnode *str1, ls_listnode *str2)
 {
     char *tempF = str1->file;
@@ -39,32 +47,30 @@ void my_linked_list_swap(ls_listnode *str1, ls_listnode *str2)
 
 void sort_linked_list(ls_listnode *head)
 {
-    struct stat stat_file;
-
-    int swapped = 1;
-    ls_listnode *last = NULL;
-    while (swapped)
+    ls_listnode *temp = head;
+    while (temp != NULL)
     {
-        if (stat(head->file, &stat_file) == 0)
+        stat(temp->file, &temp->info);
+        temp = temp->next;
+    }
+
+    temp = head;
+    ls_listnode *temp1 = head;
+
+    while (temp1 != NULL)
+    {
+        while (temp != NULL)
         {
-            swapped = 0;
-            ls_listnode *current = head;
-            ls_listnode *nextNode = head->next;
-            while (nextNode != NULL)
+            if (temp->info.st_mtime > temp->next->info.st_mtime)
             {
-                if (current->info.st_mtime <= nextNode->info.st_mtime)
-                {
-                    my_linked_list_swap(current, nextNode);
-                    swapped = 1;
-                }
-                current = nextNode;
-                nextNode = nextNode->next;
+                my_linked_list_swap(temp, temp->next);
             }
-            last = current;
+            temp = temp->next;
         }
+
+        temp1 = temp1->next;
     }
 }
-
 
 void print_linked_list(ls_listnode *head)
 {
@@ -129,8 +135,6 @@ int main(int argc, char **argv)
             sort_linked_list(head);
         }
     }
-
     my_ls(&head);
-
     return 0;
 }
