@@ -26,18 +26,18 @@ int my_strcmp(char *str1, char *str2)
     return 0;
 }
 
-// int my_length(ls_listnode *head)
-// {
-//     ls_listnode* header = head;
-//     int count = 0;
-//     while (header != NULL)
-//     {
-//         count++;
-//         header = header->next;
-//     }
+int my_length(ls_listnode *head)
+{
+    ls_listnode* header = head;
+    int count = 0;
+    while (header != NULL)
+    {
+        count++;
+        header = header->next;
+    }
 
-//     return count;
-// }
+    return count;
+}
 
 void my_linked_list_swap(ls_listnode *str1, ls_listnode *str2)
 {
@@ -67,6 +67,34 @@ void sort_linked_list(ls_listnode *head)
         while (temp != NULL)
         {
             if (temp->info.st_mtime > temp->next->info.st_mtime)
+            {
+                my_linked_list_swap(temp, temp->next);
+            }
+            temp = temp->next;
+        }
+
+        temp1 = temp1->next;
+    }
+}
+
+void sort_by_ascii(ls_listnode *head)
+{
+    ls_listnode *temp = head;
+
+    while (temp != NULL)
+    {
+        stat(temp->file, &temp->info);
+        temp = temp->next;
+    }
+
+    temp = head;
+    ls_listnode *temp1 = head;
+
+    while (temp1 != NULL)
+    {
+        while (temp != NULL)
+        {
+            if (strcmp(temp->file, temp->next->file) > 0)
             {
                 my_linked_list_swap(temp, temp->next);
             }
@@ -122,11 +150,10 @@ void my_ls(ls_listnode **head, int include_hidden)
 
     while ((data = readdir(direct)) != NULL)
     {
-       if (include_hidden || data->d_name[0] != '.' || strcmp(data->d_name, ".") == 0 || strcmp(data->d_name, ".."))
-       {
-         newline_node(head, data->d_name);
-       }
-       
+        if (include_hidden || data->d_name[0] != '.' || strcmp(data->d_name, ".") == 0 || strcmp(data->d_name, ".."))
+        {
+            newline_node(head, data->d_name);
+        }
     }
     print_linked_list(*head);
 
@@ -136,18 +163,27 @@ void my_ls(ls_listnode **head, int include_hidden)
 int main(int argc, char **argv)
 {
     struct ls_listnode *head = NULL;
-    int include_hidden = 0;
+    int include_dot = 0;
+    int sort_by_asci = 0;
+
     for (int i = 0; i < argc; i++)
     {
         if (my_strcmp(argv[i], "-t") == 0)
         {
             sort_linked_list(head);
         }
-        else if(my_strcmp(argv[i], "-a") == 0)
+        else if (my_strcmp(argv[i], "-a") == 0)
         {
-            include_hidden = 1;
+            include_dot = 1;
         }
     }
-    my_ls(&head, include_hidden);
+
+    if (sort_by_asci)
+    {
+        sort_by_ascii(head);
+    }
+
+    my_ls(&head, include_dot);
+
     return 0;
 }
