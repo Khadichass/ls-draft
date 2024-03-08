@@ -28,7 +28,7 @@ int my_strcmp(char *str1, char *str2)
 
 int my_length(ls_listnode *head)
 {
-    ls_listnode* header = head;
+    ls_listnode *header = head;
     int count = 0;
     while (header != NULL)
     {
@@ -64,7 +64,7 @@ void sort_linked_list(ls_listnode *head)
 
     while (temp1 != NULL)
     {
-        while (temp != NULL)
+        while (temp->next != NULL)
         {
             if (temp->info.st_mtime > temp->next->info.st_mtime)
             {
@@ -103,6 +103,19 @@ void sort_by_ascii(ls_listnode *head)
 
         temp1 = temp1->next;
     }
+}
+
+void free_linked_list(ls_listnode **head)
+{
+    ls_listnode *curr = *head;
+    ls_listnode *temp = curr;
+    while (curr != NULL)
+    {
+        curr = curr->next;
+        free(temp->file);
+        free(temp);
+    }
+    *head = NULL;
 }
 
 void print_linked_list(ls_listnode *head)
@@ -176,14 +189,18 @@ int main(int argc, char **argv)
         {
             include_dot = 1;
         }
-    }
-
-    if (sort_by_asci)
-    {
-        sort_by_ascii(head);
+        else if ((my_strcmp(argv[i], "-at") == 0) || (my_strcmp(argv[i], "-ta") == 0))
+        {
+            sort_linked_list(head);
+            include_dot = 1;
+        }
+        else
+        {
+            sort_by_ascii(head);
+        }
     }
 
     my_ls(&head, include_dot);
-
+    free_linked_list(&head);
     return 0;
 }
