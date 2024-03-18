@@ -111,20 +111,19 @@ void newline_node(ls_listnode **head, char *file)
     }
 }
 
-// void my_option(ls_listnode *head)
-// {
-//     int flag = 0;
-//     while (my_length(head))
-//     {
-//         if (my_strcmp(head->file, "-t") == 0)
-//         {
-//             sort_linked_list(head);
-//             flag = 1;
-//         }
-//         head = head->next;
-//     }
-// }
-
+void my_option(ls_listnode *head)
+{
+    int flag = 0;
+    while (my_length(head))
+    {
+        if (my_strcmp(head->file, "-t") == 0)
+        {
+            sort_linked_list(head);
+            flag = 1;
+        }
+        head = head->next;
+    }
+}
 void print_linked_list (ls_listnode* head)
 {
     DIR *direct;

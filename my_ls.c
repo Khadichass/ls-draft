@@ -4,6 +4,10 @@
 #include <dirent.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 typedef struct ls_listnode
 {
@@ -11,6 +15,19 @@ typedef struct ls_listnode
     struct ls_listnode *next;
     struct stat info;
 } ls_listnode;
+
+typedef struct u_input
+{
+    int a;
+    int t;
+    int length;
+    char** all_file;
+    ls_listnode* files;
+    ls_listnode* directs;
+
+} input;
+
+void print_linked_list(ls_listnode *head);
 
 int my_strcmp(char *str1, char *str2)
 {
@@ -41,13 +58,16 @@ int my_length(ls_listnode *head)
 
 void my_linked_list_swap(ls_listnode *str1, ls_listnode *str2)
 {
-    char *tempF = str1->file;
-    str1->file = str2->file;
-    str2->file = tempF;
+    ls_listnode *temp = (ls_listnode *)malloc(sizeof(ls_listnode));
+    temp->file = malloc(sizeof(char) * strlen(str1->file));
+    temp->file = str1->file;
+    temp->info = str1->info;
 
-    struct stat tempT = str1->info;
+    str1->file = str2->file;
+    str2->file = temp->file;
+
     str1->info = str2->info;
-    str2->info = tempT;
+    str2->info = temp->info;
 }
 
 void sort_linked_list(ls_listnode *head)
@@ -64,15 +84,15 @@ void sort_linked_list(ls_listnode *head)
 
     while (temp1 != NULL)
     {
+        temp = head;
         while (temp->next != NULL)
         {
-            if (temp->info.st_mtime > temp->next->info.st_mtime)
+            if (temp->info.st_mtime < temp->next->info.st_mtime)
             {
                 my_linked_list_swap(temp, temp->next);
             }
             temp = temp->next;
         }
-
         temp1 = temp1->next;
     }
 }
@@ -87,20 +107,21 @@ void sort_by_ascii(ls_listnode *head)
         temp = temp->next;
     }
 
-    temp = head;
+    ls_listnode *temp2 = head;
     ls_listnode *temp1 = head;
 
     while (temp1 != NULL)
     {
-        while (temp != NULL)
-        {
-            if (strcmp(temp->file, temp->next->file) > 0)
-            {
-                my_linked_list_swap(temp, temp->next);
-            }
-            temp = temp->next;
-        }
+        temp2 = head;
 
+        while (temp2->next != NULL)
+        {
+            if (strcmp(temp2->file, temp2->next->file) > 0)
+            {
+                my_linked_list_swap(temp2, temp2->next);
+            }
+            temp2 = temp2->next;
+        }
         temp1 = temp1->next;
     }
 }
@@ -114,16 +135,18 @@ void free_linked_list(ls_listnode **head)
         curr = curr->next;
         free(temp->file);
         free(temp);
+        temp = curr;
     }
     *head = NULL;
 }
 
 void print_linked_list(ls_listnode *head)
 {
-    while (head != NULL)
+    ls_listnode *copy = head;
+    while (copy != NULL)
     {
-        printf("%s\n", head->file);
-        head = head->next;
+        printf("%s\n", copy->file);
+        copy = copy->next;
     }
 }
 
@@ -154,53 +177,179 @@ void newline_node(ls_listnode **head, char *file)
     }
 }
 
-void my_ls(ls_listnode **head, int include_hidden)
+void my_ls(ls_listnode **head, int include_dot, char* dir_name)
 {
     DIR *direct;
-    direct = opendir(".");
+    direct = opendir(dir_name);
 
     struct dirent *data;
 
     while ((data = readdir(direct)) != NULL)
     {
-        if (include_hidden || data->d_name[0] != '.' || strcmp(data->d_name, ".") == 0 || strcmp(data->d_name, ".."))
+        if (include_dot || data->d_name[0] != '.')
         {
             newline_node(head, data->d_name);
         }
     }
-    print_linked_list(*head);
-
     closedir(direct);
+}
+
+void my_directory_file(ls_listnode **head, char *path, char **argv)
+{
+    DIR *direct;
+    direct = opendir(path);
+
+    struct dirent *data;
+    struct stat file;
+    struct stat folder;
+
+    ls_listnode* temp = *head;
+
+    stat(temp->file, &file);
+    stat(temp->file, &folder);
+
+    // int fileNum = 0;
+
+    while ((data = readdir(direct)) != NULL)
+    {
+        for (int i = 0; argv[i]; i++)
+        {
+            if (S_ISDIR(file.st_mode) == 1)
+            {
+                newline_node(head, data->d_name);
+            }
+            else if (S_ISREG(folder.st_mode) == 1)
+            {
+                newline_node(head, data->d_name);
+            }
+            else
+            {
+                printf("ls: cannot access %s: No such file or directory ", argv[i]);
+            }
+        }
+    }
+    closedir(direct);
+}
+
+void control(input* us)
+{
+    if (us->length == 1)
+    {
+        ls_listnode* all = NULL;
+        my_ls(&all, us->a, ".");
+        sort_by_ascii(all);
+        print_linked_list(all);
+    }
+    else if(us->files)
+    {
+        // int i = 1;
+        // if ((my_strcmp(us->all_file[i], "-a") != 0) || (my_strcmp(us->all_file[i], "-t") != 0))
+        // {
+        //     ls_listnode* head = NULL;
+        //     my_ls(&head, us->a, us->all_file[i]);
+        //     sort_by_ascii(head);
+        //     print_linked_list(head);
+        // }   
+        if (us->t)
+        {
+            sort_linked_list(us->files);
+        }
+        else
+        {
+            sort_by_ascii(us->files);
+        }
+        print_linked_list(us->files);
+    }
+    if (us->directs != NULL)
+    {
+        ls_listnode* temp = us->directs;
+        ls_listnode* inside = NULL;
+        while (temp)
+        {
+            // printf("temp: \n");
+            inside = NULL;
+            if (us->a)
+            {
+                my_ls(&inside, us->a, temp->file);
+                sort_by_ascii(inside);
+            }
+            else if (us->t)
+            {
+                my_ls(&inside, us->a, temp->file);
+                sort_linked_list(inside);
+            }
+            else 
+            {
+                my_ls(&inside, us->a, temp->file);
+                sort_by_ascii(inside);
+            }
+            print_linked_list(inside);
+
+            temp = temp->next;
+        }
+    }
 }
 
 int main(int argc, char **argv)
 {
-    struct ls_listnode *head = NULL;
-    int include_dot = 0;
-    int sort_by_asci = 0;
+    ls_listnode *head = NULL;
+    input us_inp;
+    us_inp.a = 0;
+    us_inp.t = 0;
+    us_inp.length = argc;
+    us_inp.all_file = argv;
+    us_inp.directs = NULL;
+    us_inp.files = NULL;
 
-    for (int i = 0; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
-        if (my_strcmp(argv[i], "-t") == 0)
+        if (my_strcmp(argv[i], "-a") == 0)
         {
-            sort_linked_list(head);
+            us_inp.a = 1;
         }
-        else if (my_strcmp(argv[i], "-a") == 0)
+        else if (my_strcmp(argv[i], "-t") == 0)
         {
-            include_dot = 1;
+            us_inp.t = 1;
         }
-        else if ((my_strcmp(argv[i], "-at") == 0) || (my_strcmp(argv[i], "-ta") == 0))
+        else if ((my_strcmp(argv[i], "-at") && my_strcmp(argv[i], "-ta")) == 0)
         {
-            sort_linked_list(head);
-            include_dot = 1;
+            us_inp.t = 1;
+            us_inp.a = 1;
         }
         else
         {
-            sort_by_ascii(head);
+            if (open(argv[i], O_RDONLY) <= 0)
+            {
+                printf("ls: cannot access '%s': No such file or directory\n", argv[i]);
+            }
+            else
+            {
+                struct stat mode;
+                stat(argv[i], &mode);
+                if (S_ISREG(mode.st_mode))
+                {
+                    newline_node(&us_inp.files, argv[i]);
+                }
+                else
+                {
+                    newline_node(&us_inp.directs, argv[i]);
+                }
+            }
         }
     }
 
-    my_ls(&head, include_dot);
-    free_linked_list(&head);
+    control(&us_inp);
+    // print_linked_list(files);
+    // my_ls(&head, include_dot);
+
+    // if (sort_by_time)
+    // {
+    //     sort_linked_list(head);
+    // }
+    // else
+    // {
+    //     sort_by_ascii(head);
+    // }
+    // free_linked_list(&head);
     return 0;
 }

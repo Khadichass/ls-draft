@@ -1,166 +1,326 @@
-// #include <stdio.h>
-
-// void my_swap(int *a, int *b, int *c) {
-//     int temp = *a;
-//     *a = *c;
-//     *c = *b;
-//     *b = temp;
-// }
-
-// int main() {
-//     int x = 5;
-//     int y = 10;
-//     int z = 15;
-
-//     printf("%d %d %d\n", x, y, z);
-
-//     my_swap(&x, &y, &z);
-
-//     printf("%d %d %d\n", x, y, z);
-
-
-
-
-//     return 0;
-// }
-
-
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <dirent.h>
-// #include <string.h>
-
-
-// struct Node {
-//     char* file;
-//     struct Node* next;
-// };
-
-// void newline_node(struct Node** head, char* file) {
-
-//     struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
-//     if (newNode != NULL) {
-//         newNode->file = (char*)malloc(strlen(file) + 1);
-//         if (newNode->file != NULL) {
-//             strcpy(newNode->file, file);
-//             newNode->next = NULL;
-
-//             if (*head == NULL) {
-                
-//                 *head = newNode;
-//             } else {
-//                 struct Node* temp = *head;
-//                 while (temp->next != NULL) {
-//                     temp = temp->next;
-//                 }
-//                 temp->next = newNode;
-//             }
-//         } 
-//     } 
-// }
-
-
-
-// void ls_1() {
-//     DIR* directory;
-//     struct dirent* entry;
-//     struct Node* head = NULL;
-
-//     directory = opendir(".");
-    
-//     while ((entry = readdir(directory)) != NULL) {
-//         newline_node(&head, entry->d_name);
-//     }
-
-//     closedir(directory);
-
-//     struct Node* current = head;
-//     while (current != NULL) {
-//         printf("%s\n", current->file);
-//         current = current->next;
-//     }
-// }
-
-// int main() {
-//     ls_1();
-//     return 0;
-// }
-
-
-
 #include <stdio.h>
+#include <string.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-
-typedef struct ls_listnode {
-    char *file;
-    struct ls_listnode *next;
+#include <fcntl.h>
+typedef struct options
+{
+    char *name;
+    struct options *next;
     struct stat info;
-} ls_listnode;
+} listnode;
 
-void my_linked_list_swap(ls_listnode *str1, ls_listnode *str2)
+void print_line(listnode *node, int flag)
 {
-    char *tempF = str1->file;
-    str1->file = str2->file;
-    str2->file = tempF;
-
-    struct stat tempT = str1->info;
-    str1->info = str2->info;
-    str2->info = tempT;
-}
-
-void sort_linked_list(ls_listnode *head)
-{
-    int swapped = 1;
-    ls_listnode *last = NULL; 
-    while (swapped)
+    if (flag == 1)
     {
-        swapped = 0;
-        ls_listnode *current = head;
-        ls_listnode *nextNode = head->next;
-        while (nextNode != NULL)
+        while (node)
         {
-            if (current->info.st_mtime <= nextNode->info.st_mtime)
-            {
-                my_linked_list_swap(current, nextNode);
-                swapped = 1; 
-            }
-            current = nextNode;
-            nextNode = nextNode->next;
+            printf("%s\n", node->name);
+            node = node->next;
         }
-        last = current;
+    }
+
+    if (flag == 2)
+    {
+        while (node)
+        {
+            if (node->name[0] != '.')
+            {
+                printf("%s\n", node->name);
+            }
+            node = node->next;
+        }
     }
 }
 
+void swap(listnode *list1, listnode *list2)
+{
+    listnode *temp = (listnode *)malloc(sizeof(listnode));
+    temp->name = malloc(sizeof(char) * strlen(list1->name));
+    temp->info = list1->info;
+    temp->name = list1->name;
 
-ls_listnode* create_ls_node(char *file, struct stat info) {
-    ls_listnode *newNode = (ls_listnode *)malloc(sizeof(ls_listnode));
-    if (newNode != NULL) {
-        newNode->file = file;
-        newNode->next = NULL;
-        newNode->info = info;
-    }
-    return newNode;
+    list1->name = list2->name;
+    list1->info = list2->info;
+
+    list2->info = temp->info;
+    list2->name = temp->name;
+
+    free(temp);
 }
 
+void new_list(listnode **list, char *name, struct stat info)
+{
+    listnode *node = (listnode *)malloc(sizeof(listnode));
+    listnode *forward = *list;
+    node->name = malloc(sizeof(char) * strlen(name));
+    node->info = info;
+    node->name = name;
+    node->next = NULL;
 
-int main() {
-    ls_listnode *head = create_ls_node("file1.txt", (struct stat){.st_mtime = 100});
-    head->next = create_ls_node("file2.txt", (struct stat){.st_mtime = 200});
-    head->next->next = create_ls_node("file3.txt", (struct stat){.st_mtime = 50});
-    head->next->next->next = create_ls_node("file4.txt", (struct stat){.st_mtime = 150});
-    
-    ls_listnode *current = head;
-    while (current != NULL) {
-        printf("%s - %ld\n", current->file, current->info.st_mtime);
-        current = current->next;
+    if (*list == NULL)
+        *list = node;
+
+    else
+    {
+        while (forward->next)
+            forward = forward->next;
+        forward->next = node;
     }
-    sort_linked_list(head);
-    
-    current = head;
-    while (current != NULL) {
-        printf("%s - %ld\n", current->file, current->info.st_mtime);
-        current = current->next;
-    }    
-    return 0;
+}
+
+void sort_by_last_mod(listnode **list)
+{
+    listnode *node1 = *list;
+    listnode *node2;
+
+    while (node1)
+    {
+        node2 = node1->next;
+        while (node2)
+        {
+
+            if (node1->info.st_mtim.tv_sec == node2->info.st_mtim.tv_sec)
+            {
+                if (node1->info.st_mtim.tv_nsec <= node2->info.st_mtim.tv_nsec)
+                {
+                    swap(node1, node2);
+                }
+            }
+            else if (node1->info.st_mtim.tv_sec < node2->info.st_mtim.tv_sec)
+            {
+                swap(node1, node2);
+            }
+            node2 = node2->next;
+        }
+        node1 = node1->next;
+    }
+    free(node1);
+    free(node2);
+}
+
+void sort_by_ascii(listnode *list)
+{
+    listnode *node1 = list;
+    listnode *node2;
+
+    while (node1)
+    {
+        node2 = node1->next;
+        while (node2)
+        {
+            if (strcmp(node1->name, node2->name) > 0)
+                swap(node1, node2);
+            node2 = node2->next;
+        }
+        node1 = node1->next;
+    }
+    free(node1);
+    free(node2);
+}
+
+listnode *all_dirs()
+{
+    listnode *list = NULL;
+    DIR *directory;
+    directory = opendir(".");
+    struct dirent *page;
+
+    while ((page = readdir(directory)))
+    {
+        struct stat info;
+        stat(page->d_name, &info);
+        new_list(&list, page->d_name, info);
+    }
+    return list;
+    free(list);
+}
+
+void files_in_folder(listnode *list, int flag, int num_files, int j, int folders, int count)
+{
+    listnode *files = NULL;
+    DIR *direct;
+    direct = opendir(list->name);
+    struct dirent *page;
+
+    while ((page = readdir(direct)))
+    {
+        struct stat info;
+        stat(page->d_name, &info);
+        new_list(&files, page->d_name, info);
+    }
+    if (count != 0 || num_files != 0)
+        putchar('\n');
+    if (num_files > 0 || j || folders > 1)
+        printf("%s:\n", list->name);
+
+    if (flag == 1)
+    {
+        sort_by_last_mod(&files);
+        print_line(files, 2);
+    }
+    else if (flag == 2)
+    {
+        sort_by_last_mod(&files);
+        print_line(files, 1);
+    }
+    else if (flag == 3)
+    {
+        sort_by_ascii(files);
+        print_line(files, 1);
+    }
+    else
+    {
+        sort_by_ascii(files);
+        print_line(files, 2);
+    }
+    free(files);
+}
+
+void files_folders(char **arr, int flag)
+{
+    listnode *files = NULL;
+    listnode *folders = NULL;
+    int file = 0, folder = 0, j = 0;
+
+    for (int i = 0; arr[i]; i++)
+    {
+        if (open(arr[i], O_RDONLY) > 0)
+        {
+            // printf("%s  ", arr[i]);
+            struct stat mode;
+            stat(arr[i], &mode);
+            if (S_ISDIR(mode.st_mode))
+            {
+                new_list(&folders, arr[i], mode);
+                folder++;
+            }
+            else
+            {
+                new_list(&files, arr[i], mode);
+                file++;
+            }
+        }
+
+        
+        else
+        {
+            printf("ls: cannot access '%s': No such file or directory\n", arr[i]);
+            j++;
+        }
+    }
+
+    if (file > 0)
+    {
+        if (flag == 1)
+        {
+            sort_by_last_mod(&files);
+            print_line(files, 2);
+        }
+
+        else if (flag == 2)
+        {
+            sort_by_last_mod(&files);
+            print_line(files, 1);
+        }
+        else if (flag == 3)
+        {
+            sort_by_ascii(files);
+            print_line(files, 1);
+        }
+        else
+        {
+            sort_by_ascii(files);
+            print_line(files, 2);
+        }
+    }
+
+    if (folder)
+    {
+        int count = 0;
+        while (folders)
+        {
+            sort_by_ascii(folders);
+            files_in_folder(folders, flag, file, j, folder, count);
+            folders = folders->next;
+            count++;
+        }
+    }
+    free(folders);
+    free(files);
+}
+
+void input(int a, int t, int j, int all, char **str, int argc)
+{
+    if (argc == 1)
+    {
+        listnode *ls = all_dirs();
+        sort_by_ascii(ls);
+        print_line(ls, 2);
+    }
+    else if (a && t == 0 && j == 0 && all == 0)
+    {
+        listnode *ls = all_dirs();
+        sort_by_ascii(ls);
+        print_line(ls, 1);
+    }
+    else if (t && a == 0 && j == 0 && all == 0)
+    {
+        listnode *ls = all_dirs();
+        sort_by_last_mod(&ls);
+        print_line(ls, 2);
+    }
+    else if ((all || (a == 1 && t == 1)) && j == 0)
+    {
+        listnode *ls = all_dirs();
+        sort_by_last_mod(&ls);
+        print_line(ls, 1);
+    }
+    else if (j && t == 0 && a == 0 && all == 0)
+    {
+        files_folders(str, 0);
+    }
+    else if (j && t && a == 0 && all == 0)
+    {
+        files_folders(str, 1);
+    }
+    else if (j && a && t == 0 && all == 0)
+    {
+        files_folders(str, 3);
+    }
+    else if (j && (all || (t == 1 && a == 1)))
+    {
+        files_folders(str, 2);
+    }
+}
+
+int main(int argc, char **argv)
+{
+    char **str = (char **)malloc(sizeof(char *) * argc);
+    int a = 0, t = 0, all = 0, j = 0;
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-a") == 0)
+        {
+            a++;
+        }
+        else if (strcmp(argv[i], "-t") == 0)
+        {
+            t++;
+        }
+        else if (strcmp(argv[i], "-ta") == 0 || strcmp(argv[i], "-at") == 0)
+        {
+            all++;
+        }
+        else
+        {
+            str[j] = malloc(strlen(argv[i]));
+            str[j++] = argv[i];
+        }
+    }
+    input(a, t, j, all, str, argc);
+    free(str);
 }
