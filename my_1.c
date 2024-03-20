@@ -181,7 +181,6 @@ void my_ls(ls_listnode **head, int include_dot, char* dir_name)
     closedir(direct);
 }
 
-
 void control(input* us)
 {
     if (us->length == 1)
@@ -230,31 +229,6 @@ void control(input* us)
 
             temp = temp->next;
         }
-    }
-    else
-    {
-        ls_listnode* all = NULL;
-        if (us->a && us->t)
-        {
-            my_ls(&all, us->a, ".");
-            sort_linked_list(all);
-        }
-        else if (us->a)
-        {
-            my_ls(&all, us->a, ".");
-            sort_by_ascii(all);
-        }
-        else if (us->t)
-        {
-            my_ls(&all, us->a, ".");
-            sort_linked_list(all);
-        }
-        // else 
-        // {
-        //     my_ls(&all, us->a, ".");
-        //     sort_by_ascii(all);
-        // }
-        print_linked_list(all);
     }
 }
 
@@ -306,8 +280,18 @@ int main(int argc, char **argv)
         }
     }
     control(&us_inp);
+    // print_linked_list(us_inp.files);
+    my_ls(&head, us_inp.a,us_inp.directs->file);
+
+    if (us_inp.t)
+    {
+        sort_linked_list(head);
+    }
+    else
+    {
+        sort_by_ascii(head);
+    }
+
     free_linked_list(&head);
-    free_linked_list(&us_inp.files);
-    free_linked_list(&us_inp.directs);
     return 0;
 }
