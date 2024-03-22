@@ -249,11 +249,6 @@ void control(input* us)
             my_ls(&all, us->a, ".");
             sort_linked_list(all);
         }
-        // else 
-        // {
-        //     my_ls(&all, us->a, ".");
-        //     sort_by_ascii(all);
-        // }
         print_linked_list(all);
     }
 }
