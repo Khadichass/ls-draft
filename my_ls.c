@@ -21,14 +21,24 @@ typedef struct u_input
     int a;
     int t;
     int length;
-    char** all_file;
-    ls_listnode* files;
-    ls_listnode* directs;
+    char **all_file;
+    ls_listnode *files;
+    ls_listnode *directs;
 
 } input;
 
 void print_linked_list(ls_listnode *head);
 void free_linked_list(ls_listnode **head);
+
+char *my_strcpy(char *param_1, char *param_2)
+{
+    for (int i = 0; param_2[i] != '\0'; i++)
+    {
+        param_1[i] = param_2[i];
+    }
+
+    return 0;
+}
 
 int my_strcmp(char *str1, char *str2)
 {
@@ -46,18 +56,19 @@ int my_strcmp(char *str1, char *str2)
 
 void my_linked_list_swap(ls_listnode *str1, ls_listnode *str2)
 {
-    ls_listnode *temp = (ls_listnode *)malloc(sizeof(ls_listnode));
-    temp->file = malloc(sizeof(char) * strlen(str1->file));
-    temp->file = str1->file;
+    ls_listnode *temp = (ls_listnode *)calloc(sizeof(ls_listnode), 1);
+    temp->file = calloc(sizeof(char), strlen(str1->file) + 1);
+    my_strcpy(temp->file, str1->file);
     temp->info = str1->info;
 
-    str1->file = str2->file;
-    str2->file = temp->file;
+    my_strcpy(str1->file, str2->file);
+    my_strcpy(str2->file, temp->file);
 
     str1->info = str2->info;
     str2->info = temp->info;
 
-    free_linked_list(&temp);
+    free(temp->file);
+    free(temp);
 }
 
 void sort_linked_list(ls_listnode *head)
@@ -108,7 +119,7 @@ void sort_by_ascii(ls_listnode *head)
 
         while (temp2->next != NULL)
         {
-            if (strcmp(temp2->file, temp2->next->file) > 0)
+            if (my_strcmp(temp2->file, temp2->next->file) > 0)
             {
                 my_linked_list_swap(temp2, temp2->next);
             }
@@ -117,7 +128,7 @@ void sort_by_ascii(ls_listnode *head)
         temp1 = temp1->next;
     }
 
-    free_linked_list(&temp1);
+    // free_linked_list(&temp1);
 }
 
 void free_linked_list(ls_listnode **head)
@@ -131,7 +142,7 @@ void free_linked_list(ls_listnode **head)
         free(temp);
         temp = curr;
     }
-    *head = NULL;
+    // *head = NULL;
 }
 
 void print_linked_list(ls_listnode *head)
@@ -142,7 +153,7 @@ void print_linked_list(ls_listnode *head)
         printf("%s\n", copy->file);
         copy = copy->next;
     }
-    free_linked_list(&copy);
+    // free_linked_list(&copy);
 }
 
 void newline_node(ls_listnode **head, char *file)
@@ -153,7 +164,7 @@ void newline_node(ls_listnode **head, char *file)
         newNode->file = (char *)malloc(strlen(file) + 1);
         if (newNode->file != NULL)
         {
-            strcpy(newNode->file, file);
+            my_strcpy(newNode->file, file);
             newNode->next = NULL;
             if (*head == NULL)
             {
@@ -170,10 +181,9 @@ void newline_node(ls_listnode **head, char *file)
             }
         }
     }
-    
 }
 
-void my_ls(ls_listnode **head, int include_dot, char* dir_name)
+void my_ls(ls_listnode **head, int include_dot, char *dir_name)
 {
     DIR *direct;
     direct = opendir(dir_name);
@@ -188,22 +198,21 @@ void my_ls(ls_listnode **head, int include_dot, char* dir_name)
         }
     }
     closedir(direct);
-    free(data);
+    // free(data);
 }
 
-
-void control(input* us)
+void control(input *us)
 {
     if (us->length == 1)
     {
-        ls_listnode* all = NULL;
+        ls_listnode *all = NULL;
         my_ls(&all, us->a, ".");
         sort_by_ascii(all);
         print_linked_list(all);
         free_linked_list(&all);
     }
-    else if(us->files)
-    { 
+    if (us->files)
+    {
         if (us->t)
         {
             sort_linked_list(us->files);
@@ -216,8 +225,8 @@ void control(input* us)
     }
     if (us->directs != NULL)
     {
-        ls_listnode* temp = us->directs;
-        ls_listnode* inside = NULL;
+        ls_listnode *temp = us->directs;
+        ls_listnode *inside = NULL;
         while (temp)
         {
             inside = NULL;
@@ -231,12 +240,12 @@ void control(input* us)
                 my_ls(&inside, us->a, temp->file);
                 sort_linked_list(inside);
             }
-            else 
+            else
             {
                 my_ls(&inside, us->a, temp->file);
                 sort_by_ascii(inside);
             }
-            printf("%s:\n",temp->file);
+            printf("%s:\n", temp->file);
             print_linked_list(inside);
 
             temp = temp->next;
@@ -244,7 +253,7 @@ void control(input* us)
     }
     else
     {
-        ls_listnode* all = NULL;
+        ls_listnode *all = NULL;
         if (us->a && us->t)
         {
             my_ls(&all, us->a, ".");
@@ -262,7 +271,6 @@ void control(input* us)
         }
         print_linked_list(all);
     }
-    
 }
 
 int main(int argc, char **argv)
